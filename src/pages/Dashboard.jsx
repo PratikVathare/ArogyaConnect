@@ -24,6 +24,13 @@ export default function Dashboard() {
   const [healthMessage, setHealthMessage] = useState("You are in great health. Keep up the good work!");
   const navigate = useNavigate();
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('arogya_auth_token');
     if (!token) {
@@ -52,13 +59,20 @@ export default function Dashboard() {
             const date = new Date(a.appointment_date);
             let timeStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + 
                           date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            
+            const now = new Date();
+            let derivedStatus = a.status || "Upcoming";
+            if (date < now && derivedStatus !== "Cancelled") {
+              derivedStatus = "Completed";
+            }
+
             return {
               id: a.id,
               doc: "Hospital Visit",
               spec: a.hospitals?.name || "Medical Consultation",
               time: timeStr,
-              status: a.status || "Upcoming",
-              color: a.status === 'Completed' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+              status: derivedStatus,
+              color: derivedStatus === 'Completed' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
             };
           });
           setAppointments(formattedAppts);
@@ -103,7 +117,7 @@ export default function Dashboard() {
               <User className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">Good morning, {userName}!</h1>
+              <h1 className="text-2xl font-bold text-slate-800">{getGreeting()}, {userName}!</h1>
               <p className="text-slate-500">Your health is looking great today.</p>
             </div>
           </div>

@@ -6,7 +6,7 @@ const groq = new Groq({
 });
 
 // A fast and capable model available on Groq
-const MODEL = 'llama-3.1-8b-instant';
+const MODEL = 'groq/compound-mini';
 
 /**
  * Analyzes patient symptoms and provides potential conditions, recommended specialty, and urgency.

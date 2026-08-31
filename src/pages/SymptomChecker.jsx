@@ -11,15 +11,54 @@ export default function SymptomChecker() {
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
 
+  const getUserCoordinates = () => {
+    return new Promise((resolve) => {
+      if (userLocation) {
+        resolve(userLocation);
+        return;
+      }
+      const cachedCoords = localStorage.getItem('arogya_user_coords');
+      if (cachedCoords) {
+        const loc = JSON.parse(cachedCoords);
+        setUserLocation(loc);
+        resolve(loc);
+        return;
+      }
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const loc = [position.coords.latitude, position.coords.longitude];
+            setUserLocation(loc);
+            localStorage.setItem('arogya_user_coords', JSON.stringify(loc));
+            resolve(loc);
+          },
+          (error) => {
+            console.error("Error getting location inside helper", error);
+            resolve(null);
+          },
+          { timeout: 3500 }
+        );
+      } else {
+        resolve(null);
+      }
+    });
+  };
+
   useEffect(() => {
-    if ('geolocation' in navigator) {
+    const cachedCoords = localStorage.getItem('arogya_user_coords');
+    if (cachedCoords) {
+      setUserLocation(JSON.parse(cachedCoords));
+    } else if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          const loc = [position.coords.latitude, position.coords.longitude];
+          setUserLocation(loc);
+          localStorage.setItem('arogya_user_coords', JSON.stringify(loc));
         },
         (error) => {
-          console.error("Error getting location", error);
-        }
+          console.error("Error getting location on mount", error);
+        },
+        { timeout: 5000 }
       );
     }
   }, []);
@@ -68,9 +107,10 @@ export default function SymptomChecker() {
       // Fetch nearby hospitals
       let hospitalNames = ['Arogya Network Hospital', 'City General Hospital']; // fallback
       try {
+        const loc = await getUserCoordinates();
         let url = `http://127.0.0.1:3001/api/hospitals/nearby?specialization=${encodeURIComponent(dept)}`;
-        if (userLocation) {
-          url += `&lat=${userLocation[0]}&lng=${userLocation[1]}`;
+        if (loc) {
+          url += `&lat=${loc[0]}&lng=${loc[1]}`;
         }
         
         const hospResponse = await fetch(url, { headers });
@@ -260,17 +300,27 @@ export default function SymptomChecker() {
                     <h3 className="font-bold text-blue-900 mb-2">Recommended Department</h3>
                     <p className="text-blue-800 font-medium mb-6 text-xl">{results.department}</p>
                     
-                    <h4 className="text-sm font-bold text-blue-800 mb-3 uppercase tracking-wider">Suggested Hospitals</h4>
+                    <h4 className="text-sm font-bold text-blue-800 mb-3 uppercase tracking-wider">Suggested Hospitals (Click to book)</h4>
                     <div className="flex flex-wrap gap-2">
                       {results.hospitals.map((hosp, idx) => (
-                        <span key={idx} className="bg-white text-blue-700 text-sm px-3 py-1.5 rounded-full font-semibold border border-blue-100">{hosp}</span>
+                        <Link 
+                          key={idx} 
+                          to={`/hospitals?specialty=${encodeURIComponent(results.department)}&hospital=${encodeURIComponent(hosp)}&lat=${userLocation ? userLocation[0] : ''}&lng=${userLocation ? userLocation[1] : ''}`}
+                          className="bg-white hover:bg-blue-600 hover:text-white hover:border-blue-600 text-blue-700 text-sm px-3.5 py-2 rounded-xl font-bold border border-blue-100 transition-all shadow-sm hover:shadow flex items-center gap-1.5 group cursor-pointer"
+                        >
+                          <Activity className="w-3.5 h-3.5 text-blue-500 group-hover:text-white transition-colors" />
+                          {hosp}
+                        </Link>
                       ))}
                     </div>
                   </div>
                 </div>
 
                 <div className="pt-6 mt-8 border-t border-slate-100">
-                  <Link to="/hospitals" className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2">
+                  <Link 
+                    to={`/hospitals?specialty=${encodeURIComponent(results.department)}&lat=${userLocation ? userLocation[0] : ''}&lng=${userLocation ? userLocation[1] : ''}`} 
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2"
+                  >
                     Book Appointment Now
                     <ArrowRight className="w-5 h-5" />
                   </Link>
