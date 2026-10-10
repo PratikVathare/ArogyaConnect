@@ -7,6 +7,8 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Hospitals from './pages/Hospitals';
 import SymptomChecker from './pages/SymptomChecker';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   const [location, setLocation] = useState(null);
@@ -53,6 +55,8 @@ function App() {
         <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password" element={<ResetPassword />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="hospitals" element={<Hospitals />} />
         <Route path="symptom-checker" element={<SymptomChecker />} />

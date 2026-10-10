@@ -5,8 +5,32 @@ const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY
 });
 
-// A fast and capable model available on Groq
-const MODEL = 'groq/compound-mini';
+// Active models with automatic fallback support
+const MODELS = [
+    'openai/gpt-oss-120b',
+    'openai/gpt-oss-20b',
+    'qwen/qwen3.8-27b'
+];
+
+/**
+ * Creates chat completion with fallback across available models
+ */
+async function createChatCompletionWithFallback(options) {
+    let lastError = null;
+    for (const model of MODELS) {
+        try {
+            const response = await groq.chat.completions.create({
+                ...options,
+                model
+            });
+            return response;
+        } catch (err) {
+            console.warn(`Groq completion attempt with model '${model}' failed:`, err.message);
+            lastError = err;
+        }
+    }
+    throw lastError || new Error('All LLM models failed.');
+}
 
 /**
  * Analyzes patient symptoms and provides potential conditions, recommended specialty, and urgency.
@@ -34,11 +58,10 @@ Do not include any other text, return ONLY valid JSON.
 Input to analyze: "${symptoms}"`;
 
     try {
-        const chatCompletion = await groq.chat.completions.create({
+        const chatCompletion = await createChatCompletionWithFallback({
             messages: [
                 { role: "user", content: prompt }
             ],
-            model: MODEL,
             temperature: 0.2,
             response_format: { type: 'json_object' },
         });
@@ -47,7 +70,7 @@ Input to analyze: "${symptoms}"`;
         return JSON.parse(content);
     } catch (error) {
         console.error("Error in analyzeSymptoms:", error);
-        throw new Error("Failed to analyze symptoms using LLM.");
+        throw new Error("Failed to analyze symptoms using LLM: " + error.message);
     }
 }
 
@@ -68,12 +91,11 @@ You must respond in valid JSON format containing exactly these keys:
 - "intent": (string) The core intent or summary of the request.`;
 
     try {
-        const chatCompletion = await groq.chat.completions.create({
+        const chatCompletion = await createChatCompletionWithFallback({
             messages: [
                 { role: "system", content: "You are an intelligent query parsing assistant that strictly outputs JSON only. Do not wrap JSON in markdown blocks or include any other text." },
                 { role: "user", content: prompt }
             ],
-            model: MODEL,
             temperature: 0.1,
             response_format: { type: 'json_object' },
         });
@@ -82,7 +104,7 @@ You must respond in valid JSON format containing exactly these keys:
         return JSON.parse(content);
     } catch (error) {
         console.error("Error in extractHospitalQuery:", error);
-        throw new Error("Failed to extract query parameters using LLM.");
+        throw new Error("Failed to extract query parameters using LLM: " + error.message);
     }
 }
 
