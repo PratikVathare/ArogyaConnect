@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, MapPin, Star, Clock, Navigation, Calendar, Phone, Activity, ChevronRight } from 'lucide-react';
+import { Search, MapPin, Star, Clock, Navigation, Calendar, Phone, Activity, ChevronRight, Scale, X, CheckCircle2 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -71,6 +71,7 @@ export default function Hospitals() {
   const [activeHospitalId, setActiveHospitalId] = useState(null);
   const [hospitals, setHospitals] = useState([]);
   const [locatingFinished, setLocatingFinished] = useState(false);
+  const [selectedCompareIds, setSelectedCompareIds] = useState([]);
   
   const [bookingHospital, setBookingHospital] = useState(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
@@ -80,6 +81,19 @@ export default function Hospitals() {
   const [apptNotes, setApptNotes] = useState('');
 
   const markerRefs = useRef({});
+
+  const handleToggleCompare = (e, hospitalId) => {
+    e.stopPropagation();
+    if (selectedCompareIds.includes(hospitalId)) {
+      setSelectedCompareIds(selectedCompareIds.filter(id => id !== hospitalId));
+    } else {
+      if (selectedCompareIds.length >= 4) {
+        alert("You can compare up to 4 hospitals at a time.");
+        return;
+      }
+      setSelectedCompareIds([...selectedCompareIds, hospitalId]);
+    }
+  };
 
   const checkAuth = () => {
     const token = localStorage.getItem('arogya_auth_token');
@@ -434,6 +448,13 @@ export default function Hospitals() {
               </h1>
               <p className="text-slate-500 mt-1 font-medium">Find and book appointments at verified healthcare facilities.</p>
             </div>
+            <button
+              onClick={() => navigate('/compare-hospitals', { state: { selectedHospitalIds: selectedCompareIds } })}
+              className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs flex items-center gap-2 border border-blue-200 transition-all shadow-sm active:scale-95 shrink-0"
+            >
+              <Scale className="w-4 h-4 text-blue-600" />
+              Compare ({selectedCompareIds.length})
+            </button>
           </div>
 
           {/* Search Bar Block */}
@@ -558,20 +579,25 @@ export default function Hospitals() {
                           </div>
                         </div>
                         
-                        <div className="flex flex-wrap gap-1.5 mb-6">
-                          {hospital.specializations.slice(0, 3).map((spec, i) => (
+                        <div className="flex flex-wrap items-center gap-1.5 mb-6">
+                          {hospital.treatment_cost?.consultation_formatted && (
+                            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-lg text-[10px] font-black tracking-wide uppercase border border-emerald-200">
+                              {hospital.treatment_cost.consultation_formatted} OPD
+                            </span>
+                          )}
+                          {hospital.specializations.slice(0, 2).map((spec, i) => (
                             <span key={i} className="px-2.5 py-1 bg-blue-50/80 text-blue-700 rounded-lg text-[10px] font-bold tracking-wide uppercase border border-blue-100/50 shadow-sm">
                               {spec}
                             </span>
                           ))}
-                          {hospital.specializations.length > 3 && (
+                          {hospital.specializations.length > 2 && (
                              <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold tracking-wide uppercase border border-slate-200">
-                               +{hospital.specializations.length - 3}
+                               +{hospital.specializations.length - 2}
                              </span>
                           )}
                         </div>
 
-                        <div className="mt-auto pt-5 border-t border-slate-100 flex items-center justify-between">
+                        <div className="mt-auto pt-5 border-t border-slate-100 flex items-center justify-between gap-2">
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Wait Time</span>
                             <div className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
@@ -579,13 +605,28 @@ export default function Hospitals() {
                               <span className="text-orange-600 font-black">{hospital.wait_time}</span>
                             </div>
                           </div>
-                          <button 
-                            onClick={(e) => handleBookClick(e, hospital)}
-                            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs font-black rounded-xl shadow-lg hover:shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center gap-1.5 uppercase tracking-wider"
-                          >
-                            <Calendar className="w-4 h-4" />
-                            Book Visit
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => handleToggleCompare(e, hospital.id)}
+                              className={`px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border active:scale-95 ${
+                                selectedCompareIds.includes(hospital.id)
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                  : 'bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border-slate-200'
+                              }`}
+                              title={selectedCompareIds.includes(hospital.id) ? 'Remove from comparison' : 'Add to comparison'}
+                            >
+                              <Scale className="w-3.5 h-3.5" />
+                              {selectedCompareIds.includes(hospital.id) ? 'Comparing' : 'Compare'}
+                            </button>
+                            <button 
+                              onClick={(e) => handleBookClick(e, hospital)}
+                              className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs font-black rounded-xl shadow-lg hover:shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center gap-1.5 uppercase tracking-wider"
+                            >
+                              <Calendar className="w-3.5 h-3.5" />
+                              Book
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </motion.div>
@@ -763,6 +804,48 @@ export default function Hospitals() {
           </motion.div>
         </div>
       )}
+
+      {/* Floating Bottom Comparison Bar */}
+      <AnimatePresence>
+        {selectedCompareIds.length > 0 && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 text-white backdrop-blur-md px-6 py-4 rounded-3xl shadow-2xl border border-slate-700 flex items-center justify-between gap-5 max-w-2xl w-[92%]"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 bg-blue-600 rounded-2xl text-white shrink-0 shadow-md">
+                <Scale className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-black truncate">
+                  {selectedCompareIds.length} hospital{selectedCompareIds.length > 1 ? 's' : ''} selected
+                </p>
+                <p className="text-[11px] text-slate-300 truncate">
+                  Compare Treatment Cost, Facilities, Ratings, Experience & Wait Time
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={() => navigate('/compare-hospitals', { state: { selectedHospitalIds: selectedCompareIds } })}
+                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black rounded-xl text-xs flex items-center gap-1.5 shadow-lg active:scale-95 transition-all uppercase tracking-wider"
+              >
+                Compare Now <ChevronRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setSelectedCompareIds([])}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+                title="Clear selection"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

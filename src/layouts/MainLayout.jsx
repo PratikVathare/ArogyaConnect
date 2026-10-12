@@ -1,7 +1,8 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Menu, X } from 'lucide-react';
+import { Activity, Menu, X, Sparkles } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import AIChatWidget from '../components/AIChatWidget';
 
 export default function MainLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,7 +25,9 @@ export default function MainLayout() {
     { name: 'Home', path: '/' },
     { name: 'Dashboard', path: '/dashboard' },
     { name: 'Hospitals', path: '/hospitals' },
+    { name: 'Compare Hospitals', path: '/compare-hospitals' },
     { name: 'Symptom Checker', path: '/symptom-checker' },
+    { name: 'AI Assistant', path: '/ai-assistant' },
   ];
 
   return (
@@ -148,6 +151,9 @@ export default function MainLayout() {
           <p className="text-sm">© 2026 ArogyaConnect. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Global AI Chatbot Widget */}
+      <AIChatWidget />
     </div>
   );
 }

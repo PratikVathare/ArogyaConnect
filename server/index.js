@@ -14,6 +14,7 @@ const userRoutes = require('./routes/userRoutes');
 const symptomsRoutes = require('./routes/symptomsRoutes');
 const hospitalRoutes = require('./routes/hospitalRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
@@ -25,6 +26,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/symptoms', symptomsRoutes);
 app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/chat', chatbotRoutes);
 
 // Start Server
 app.listen(PORT, () => {

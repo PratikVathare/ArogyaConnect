@@ -6,7 +6,9 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Hospitals from './pages/Hospitals';
+import CompareHospitals from './pages/CompareHospitals';
 import SymptomChecker from './pages/SymptomChecker';
+import AIAssistant from './pages/AIAssistant';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
@@ -59,7 +61,11 @@ function App() {
         <Route path="reset-password" element={<ResetPassword />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="hospitals" element={<Hospitals />} />
+        <Route path="compare-hospitals" element={<CompareHospitals />} />
+        <Route path="compare" element={<CompareHospitals />} />
         <Route path="symptom-checker" element={<SymptomChecker />} />
+        <Route path="ai-assistant" element={<AIAssistant />} />
+        <Route path="chat" element={<AIAssistant />} />
       </Route>
     </Routes>
   );
